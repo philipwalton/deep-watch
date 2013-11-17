@@ -25,5 +25,8 @@
     "semver": "*",
     "colors": "*",
     "moment": "*"
+  },
+  "dependencies": {
+    "lodash.defaults": "*"
   }
 }
