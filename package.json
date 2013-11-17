@@ -1,0 +1,29 @@
+{
+  "name": "watch-deep",
+  "version": "0.1.0",
+  "description": "Exactly like fs.watch, but with sub-directory support.",
+  "scripts": {
+    "test": "mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:philipwalton/watch-deep.git"
+  },
+  "keywords": [
+    "fs",
+    "watch"
+  ],
+  "author": "Philip Walton",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/philipwalton/watch-deep/issues"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "chai": "*",
+    "shelljs": "*",
+    "semver": "*",
+    "colors": "*",
+    "moment": "*"
+  }
+}
