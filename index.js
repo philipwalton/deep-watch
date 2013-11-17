@@ -1,6 +1,5 @@
 var fs = require('fs')
   , path = require('path')
-  , watchers = {}
   , defaults = require('lodash.defaults')
 
 
@@ -10,6 +9,7 @@ var defaultOptions = {
   exclude: []
 }
 
+
 var isDirectory = function(filename) {
   // TODO: consider async
   return fs.existsSync(filename)
@@ -18,13 +18,13 @@ var isDirectory = function(filename) {
 }
 
 
-function WatchDeep(options) {
+function DeepWatcher(options) {
   this._options = defaults(options, defaultOptions)
   this._watchers = {}
 }
 
 
-WatchDeep.prototype.start = function(cb) {
+DeepWatcher.prototype.start = function(cb) {
   if (typeof cb == 'function') {
     this._options.callback = cb
   }
@@ -33,7 +33,8 @@ WatchDeep.prototype.start = function(cb) {
   return this
 }
 
-WatchDeep.prototype.stop = function() {
+
+DeepWatcher.prototype.stop = function() {
   var _this = this
 
   Object.keys(this._watchers).forEach(function(watcher) {
@@ -45,7 +46,7 @@ WatchDeep.prototype.stop = function() {
 }
 
 
-WatchDeep.prototype._watch = function(dir) {
+DeepWatcher.prototype._watch = function(dir) {
   var _this = this
   dir = path.relative(this._options.cwd, dir) || '.'
 
@@ -63,7 +64,7 @@ WatchDeep.prototype._watch = function(dir) {
 }
 
 
-WatchDeep.prototype._onEvent = function(event, filepath) {
+DeepWatcher.prototype._onEvent = function(event, filepath) {
   this._options.callback.call(this, event, filepath)
 
   if (this._watchers[filepath])
@@ -73,7 +74,7 @@ WatchDeep.prototype._onEvent = function(event, filepath) {
 }
 
 
-WatchDeep.prototype._addWatcher = function(directory) {
+DeepWatcher.prototype._addWatcher = function(directory) {
   // don't double watch
   if (this._watchers[directory]) return
 
@@ -84,7 +85,7 @@ WatchDeep.prototype._addWatcher = function(directory) {
 }
 
 
-WatchDeep.prototype._removeWatcher = function(directory) {
+DeepWatcher.prototype._removeWatcher = function(directory) {
   Object.keys(this._watchers).forEach(function(dirpath) {
     // remove any watchers on this director and sub-directories
     if (dirpath.indexOf(directory) === 0) {
@@ -95,7 +96,7 @@ WatchDeep.prototype._removeWatcher = function(directory) {
 }
 
 
-WatchDeep.prototype._isExcluded = function(dir) {
+DeepWatcher.prototype._isExcluded = function(dir) {
   options = this._options
 
   // never exclude the current working directory
@@ -112,4 +113,5 @@ WatchDeep.prototype._isExcluded = function(dir) {
   }
 }
 
-module.exports = WatchDeep
+
+module.exports = DeepWatcher

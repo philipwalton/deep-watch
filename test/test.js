@@ -1,11 +1,4 @@
-# Deep Watcher
-
-Exactly like fs.watch, but with sub-directory support.
-
-## Example:
-
-```js
-var DeepWatcher = require('deep-watcher')
+var DeepWatcher = require('..')
 
 var dw = new DeepWatcher({
   exclude: ['node_modules'],
@@ -15,4 +8,3 @@ var dw = new DeepWatcher({
 })
 
 dw.start()
-```
