@@ -24,7 +24,8 @@
     "shelljs": "*",
     "semver": "*",
     "colors": "*",
-    "moment": "*"
+    "moment": "*",
+    "fs-extra": "~0.8.1"
   },
   "dependencies": {
     "lodash.defaults": "*"

@@ -16,3 +16,6 @@ var dw = new DeepWatch({
 
 dw.start()
 ```
+## The Future
+
+This library may or may not be needed once [this feature](https://github.com/joyent/node/commit/33c9f0c) is released in stable.
