@@ -1,13 +1,13 @@
-# Deep Watcher
+# Deep Watch
 
 Exactly like fs.watch, but with sub-directory support.
 
 ## Example:
 
 ```js
-var DeepWatcher = require('deep-watcher')
+var DeepWatch = require('deep-watch')
 
-var dw = new DeepWatcher({
+var dw = new DeepWatch({
   exclude: ['node_modules'],
   callback: function(event, filename) {
     if (filename == 'foo/bar/index.html') this.stop()

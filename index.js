@@ -18,13 +18,13 @@ var isDirectory = function(filename) {
 }
 
 
-function DeepWatcher(options) {
+function DeepWatch(options) {
   this._options = defaults(options, defaultOptions)
   this._watchers = {}
 }
 
 
-DeepWatcher.prototype.start = function(cb) {
+DeepWatch.prototype.start = function(cb) {
   if (typeof cb == 'function') {
     this._options.callback = cb
   }
@@ -34,7 +34,7 @@ DeepWatcher.prototype.start = function(cb) {
 }
 
 
-DeepWatcher.prototype.stop = function() {
+DeepWatch.prototype.stop = function() {
   var _this = this
 
   Object.keys(this._watchers).forEach(function(watcher) {
@@ -46,25 +46,23 @@ DeepWatcher.prototype.stop = function() {
 }
 
 
-DeepWatcher.prototype._watch = function(dir) {
+DeepWatch.prototype._watch = function(dir) {
   var _this = this
-  dir = path.relative(this._options.cwd, dir) || '.'
+  // dir = path.relative(this._options.cwd, dir) || '.'
 
   if (this._isExcluded(dir))
     return
   else
     this._addWatcher(dir)
 
-  fs.readdir(dir, function(err, files) {
-    files.forEach(function(f) {
-      f = path.join(dir, f)
-      if (isDirectory(f)) _this._watch(f)
-    })
+  fs.readdirSync(dir).forEach(function(f) {
+    f = path.join(dir, f)
+    if (isDirectory(f)) _this._watch(f)
   })
 }
 
 
-DeepWatcher.prototype._onEvent = function(event, filepath) {
+DeepWatch.prototype._onEvent = function(event, filepath) {
   this._options.callback.call(this, event, filepath)
 
   if (this._watchers[filepath])
@@ -74,7 +72,7 @@ DeepWatcher.prototype._onEvent = function(event, filepath) {
 }
 
 
-DeepWatcher.prototype._addWatcher = function(directory) {
+DeepWatch.prototype._addWatcher = function(directory) {
   // don't double watch
   if (this._watchers[directory]) return
 
@@ -85,7 +83,7 @@ DeepWatcher.prototype._addWatcher = function(directory) {
 }
 
 
-DeepWatcher.prototype._removeWatcher = function(directory) {
+DeepWatch.prototype._removeWatcher = function(directory) {
   Object.keys(this._watchers).forEach(function(dirpath) {
     // remove any watchers on this director and sub-directories
     if (dirpath.indexOf(directory) === 0) {
@@ -96,7 +94,7 @@ DeepWatcher.prototype._removeWatcher = function(directory) {
 }
 
 
-DeepWatcher.prototype._isExcluded = function(dir) {
+DeepWatch.prototype._isExcluded = function(dir) {
   options = this._options
 
   // never exclude the current working directory
@@ -114,4 +112,4 @@ DeepWatcher.prototype._isExcluded = function(dir) {
 }
 
 
-module.exports = DeepWatcher
+module.exports = DeepWatch
