@@ -48,7 +48,6 @@ DeepWatch.prototype.stop = function() {
 
 DeepWatch.prototype._watch = function(dir) {
   var _this = this
-  // dir = path.relative(this._options.cwd, dir) || '.'
 
   if (this._isExcluded(dir))
     return
@@ -63,6 +62,11 @@ DeepWatch.prototype._watch = function(dir) {
 
 
 DeepWatch.prototype._onEvent = function(event, filepath) {
+  // Creating and deleting directories will trigger events on their
+  // parent watcher. As such, check if the remove event is a directory
+  // and is in the exclude list before invoking the callback
+  if (this._isExcluded(filepath)) return
+
   this._options.callback.call(this, event, filepath)
 
   if (this._watchers[filepath])
@@ -106,7 +110,7 @@ DeepWatch.prototype._isExcluded = function(dir) {
   }
   else {
     return options.exclude.some(function(exclude) {
-      return dir.indexOf(exclude) === 0
+      return dir === exclude
     })
   }
 }
