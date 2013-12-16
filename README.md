@@ -16,6 +16,12 @@ var dw = new DeepWatch({
 
 dw.start()
 ```
-## The Future
 
-This library may or may not be needed once [this feature](https://github.com/joyent/node/commit/33c9f0c) is released in stable.
+## How It Works
+
+A recursive option for `fs.watch` is [natively supported](http://nodejs.org/docs/v0.11.9/api/fs.html#fs_fs_watch_filename_options_listener) (Mac only) in node version 0.11.9+. Supported platforms will use the recursive options.
+
+All other platforms will simply apply `fs.watch` to all subdirectories, keep track of if/when those sub-directories are add and remove, and apply/destory the watchers accordingly.
+
+
+
