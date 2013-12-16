@@ -1,74 +1,138 @@
-
 var fs = require('fs-extra')
   , expect = require('chai').expect
-  , shell = require('shelljs')
   , DeepWatch = require('..')
 
 describe('DeepWatch', function() {
 
-  beforeEach(function(done) {
-    fs.outputFile('test/fixtures/one.txt', 'one.txt')
-    fs.outputFile('test/fixtures/two.txt', 'two.txt')
-    fs.outputFile('test/fixtures/sub-dir/one.txt', 'one.txt')
-    fs.outputFile('test/fixtures/sub-dir/two.txt', 'two.txt')
-    fs.outputFile('test/fixtures/sub-dir/sub-sub-dir/one.txt', 'one.txt')
-    fs.outputFile('test/fixtures/sub-dir/sub-sub-dir/two.txt', 'two.txt')
+  var cwd = process.cwd()
+  var events
 
-    // wait to prevent these file system writes from invoke fs.watch callbacks
-    setTimeout(function() {
-      done()
-    }, 100)
+  function storeData(event, filename) {
+    // Annoyingly, storing the event type doesn't seem to work well with
+    // creating fixtures manually. Until this is resolved, just check for
+    // the presense of the filename, and don't care about the event.
+    // https://github.com/joyent/node/issues/6714
+    events.push({filename:filename, event:event})
+  }
+
+  before(function() {
+    fs.mkdirpSync('test/fixtures')
+    process.chdir('test/fixtures')
   })
 
+  beforeEach(function(done) {
+    events = []
+    fs.outputFileSync('one.txt', 'one.txt')
+    fs.outputFileSync('two.txt', 'two.txt')
+    fs.outputFileSync('sub-dir/one.txt', 'one.txt')
+    fs.outputFileSync('sub-dir/two.txt', 'two.txt')
+    fs.outputFileSync('sub-dir/sub-sub-dir/one.txt', 'one.txt')
+    fs.outputFileSync('sub-dir/sub-sub-dir/two.txt', 'two.txt')
+
+    // wait to prevent these file system writes from invoke fs.watch callbacks
+    setTimeout(done, 100)
+  })
+
+
   after(function() {
+    process.chdir(cwd)
     fs.removeSync('test/fixtures')
   })
 
-  describe('#start', function() {
+  describe('#start', function(done) {
 
-    it('can set the current working directory', function(done) {
-
-      var cwd = process.cwd()
-      process.chdir('test/fixtures')
-
+    it('can detect changes to files', function(done) {
       var dw = new DeepWatch({
-        callback: onChange
+        callback: function(event, filename) {
+          storeData(event, filename)
+          if (events.length === 3) {
+            expect(events[0].filename).to.equal('new.txt')
+            expect(events[1].filename).to.equal('two.txt')
+            expect(events[2].filename).to.equal('one.txt')
+            this.stop()
+            done()
+          }
+        }
       })
       dw.start()
-
-      var originalText = fs.readFileSync('two.txt', 'utf-8')
-      fs.writeFileSync('two.txt', 'foo')
-
-      function onChange(event, filename) {
-        this.stop()
-
-        expect(filename).to.equal('two.txt')
-        // fs.writeFileSync('two.txt', originalText)
-
-        process.chdir(cwd)
-        done()
-      }
+      fs.writeFileSync('new.txt', 'new file')
+      fs.removeSync('two.txt')
+      fs.appendFileSync('one.txt', 'additional text...')
     })
 
-    it('can detect changes in the pre-existing directories', function(done) {
-
+    it('can detect changes to files in sub-directories', function(done) {
       var dw = new DeepWatch({
-        cwd: 'test/fixtures',
-        callback: onChange
+        callback: function(event, filename) {
+          expect(filename).to.equal('sub-dir/one.txt')
+          this.stop()
+          done()
+        }
       })
       dw.start()
+      fs.writeFileSync('sub-dir/one.txt', 'foo')
+    })
 
-      var originalText = fs.readFileSync('test/fixtures/one.txt', 'utf-8')
-      fs.writeFileSync('test/fixtures/one.txt', 'foo')
+    it('can detect changes to files in sub-sub-directories', function(done) {
+      var dw = new DeepWatch({
+        callback: function(event, filename) {
+          expect(filename).to.equal('sub-dir/sub-sub-dir/one.txt')
+          this.stop()
+          done()
+        }
+      })
+      dw.start()
+      fs.writeFileSync('sub-dir/sub-sub-dir/one.txt', 'foo')
+    })
 
-      function onChange(event, filename) {
-        this.stop()
+    it('can detect changes to files in directories created after the watching started', function(done) {
+      var dw = new DeepWatch({
+        callback: function(event, filename) {
+          storeData(event, filename)
+          if (events.length === 3) {
+            expect(events[0].filename).to.equal('new-dir')
+            expect(events[1].filename).to.equal('new-dir/foo.txt')
+            expect(events[2].filename).to.equal('new-dir/foo.txt')
+            this.stop()
+            fs.removeSync('new-dir')
+            done()
 
-        expect(filename).to.equal('test/fixtures/one.txt')
-        // fs.writeFileSync('test/fixtures/one.txt', originalText)
+          }
+        }
+      })
+      dw.start()
+      fs.mkdirpSync('new-dir')
+      // timeouts are needed to account for the delay in file system events
+      setTimeout(function() {
+        fs.outputFileSync('new-dir/foo.txt', 'foo')
+        setTimeout(function() {
+          fs.removeSync('new-dir/foo.txt')
+        }, 100)
+      }, 100)
+    })
 
-        done()
-      }
+    it('can detect the removal of directories created after the watching started', function(done) {
+      var dw = new DeepWatch({
+        callback: function(event, filename) {
+          storeData(event, filename)
+          if (events.length === 3) {
+            expect(events[0].filename).to.equal('new-dir')
+            expect(events[1].filename).to.equal('new-dir/new-sub-dir')
+            expect(events[2].filename).to.equal('new-dir/new-sub-dir')
+            this.stop()
+            fs.removeSync('new-dir')
+            done()
+          }
+        }
+      })
+      dw.start()
+      fs.mkdirpSync('new-dir')
+      // timeouts are needed to account for the delay in file system events
+      setTimeout(function() {
+        fs.mkdirpSync('new-dir/new-sub-dir')
+        setTimeout(function() {
+          fs.removeSync('new-dir/new-sub-dir')
+        }, 100)
+      }, 100)
     })
 
   })
