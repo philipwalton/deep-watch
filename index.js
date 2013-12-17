@@ -1,14 +1,15 @@
 var fs = require('fs')
   , path = require('path')
   , defaults = require('lodash.defaults')
+  , semver = require('semver')
 
+var supportsRecursiveWatch = process.platform == 'darwin'
+  && semver.gte(process.version, '0.11.9')
 
 var defaultOptions = {
-  cwd: '.',
   ignoreDotDirectories: true,
   exclude: []
 }
-
 
 var isDirectory = function(filename) {
   // TODO: consider async
@@ -18,17 +19,22 @@ var isDirectory = function(filename) {
 }
 
 
-function DeepWatch(options) {
+function DeepWatch(cwd, options, callback) {
+  // argument shifting
+  if (typeof options == 'function') {
+    callback = options
+    options = {}
+  }
+
+  this._cwd = cwd
+  this._callback = callback
   this._options = defaults(options, defaultOptions)
   this._watchers = {}
 }
 
 
 DeepWatch.prototype.start = function(cb) {
-  if (typeof cb == 'function') {
-    this._options.callback = cb
-  }
-  this._watch(this._options.cwd)
+  this._watch(this._cwd)
 
   return this
 }
@@ -67,7 +73,7 @@ DeepWatch.prototype._onEvent = function(event, filepath) {
   // and is in the exclude list before invoking the callback
   if (this._isExcluded(filepath)) return
 
-  this._options.callback.call(this, event, filepath)
+  this._callback.call(this, event, filepath)
 
   if (this._watchers[filepath])
     this._removeWatcher(filepath)
@@ -102,7 +108,7 @@ DeepWatch.prototype._isExcluded = function(dir) {
   options = this._options
 
   // never exclude the current working directory
-  if (path.relative(options.cwd, dir) === '') {
+  if (path.relative(this._cwd, dir) === '') {
     return false
   }
   else if (options.ignoreDotDirectories && dir[0] == '.') {

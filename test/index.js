@@ -1,6 +1,9 @@
 var fs = require('fs-extra')
-  , expect = require('chai').expect
-  , DeepWatch = require('..')
+var expect = require('chai').expect
+var DeepWatch = require('..')
+
+// this needs to be enough time for the watch events to fire
+var delay = 100
 
 describe('DeepWatch', function() {
 
@@ -15,13 +18,13 @@ describe('DeepWatch', function() {
     events.push({filename:filename, event:event})
   }
 
-  before(function() {
-    fs.mkdirpSync('test/fixtures')
-    process.chdir('test/fixtures')
-  })
-
   beforeEach(function(done) {
     events = []
+
+    fs.removeSync('test/fixtures')
+    fs.mkdirpSync('test/fixtures')
+    process.chdir('test/fixtures')
+
     fs.outputFileSync('one.txt', 'one.txt')
     fs.outputFileSync('two.txt', 'two.txt')
     fs.outputFileSync('sub-dir/one.txt', 'one.txt')
@@ -30,27 +33,28 @@ describe('DeepWatch', function() {
     fs.outputFileSync('sub-dir/sub-sub-dir/two.txt', 'two.txt')
 
     // wait to prevent these file system writes from invoke fs.watch callbacks
-    setTimeout(done, 100)
+    setTimeout(done, delay)
+  })
+
+  afterEach(function() {
+    process.chdir(cwd)
   })
 
   after(function() {
-    process.chdir(cwd)
     fs.removeSync('test/fixtures')
   })
 
   describe('#start', function(done) {
 
     it('can detect changes to files', function(done) {
-      var dw = new DeepWatch({
-        callback: function(event, filename) {
-          storeData(event, filename)
-          if (events.length === 3) {
-            expect(events[0].filename).to.equal('new.txt')
-            expect(events[1].filename).to.equal('two.txt')
-            expect(events[2].filename).to.equal('one.txt')
-            this.stop()
-            done()
-          }
+      var dw = new DeepWatch('.', function(event, filename) {
+        storeData(event, filename)
+        if (events.length === 3) {
+          expect(events[0].filename).to.equal('new.txt')
+          expect(events[1].filename).to.equal('two.txt')
+          expect(events[2].filename).to.equal('one.txt')
+          this.stop()
+          done()
         }
       })
       dw.start()
@@ -60,16 +64,14 @@ describe('DeepWatch', function() {
     })
 
     it('can detect changes to files in sub-directories', function(done) {
-      var dw = new DeepWatch({
-        callback: function(event, filename) {
-          storeData(event, filename)
-          if (events.length === 3) {
-            expect(events[0].filename).to.equal('sub-dir/new.txt')
-            expect(events[1].filename).to.equal('sub-dir/two.txt')
-            expect(events[2].filename).to.equal('sub-dir/one.txt')
-            this.stop()
-            done()
-          }
+      var dw = new DeepWatch('.', function(event, filename) {
+        storeData(event, filename)
+        if (events.length === 3) {
+          expect(events[0].filename).to.equal('sub-dir/new.txt')
+          expect(events[1].filename).to.equal('sub-dir/two.txt')
+          expect(events[2].filename).to.equal('sub-dir/one.txt')
+          this.stop()
+          done()
         }
       })
       dw.start()
@@ -79,16 +81,14 @@ describe('DeepWatch', function() {
     })
 
     it('can detect changes to files in sub-sub-directories', function(done) {
-      var dw = new DeepWatch({
-        callback: function(event, filename) {
-          storeData(event, filename)
-          if (events.length === 3) {
-            expect(events[0].filename).to.equal('sub-dir/sub-sub-dir/new.txt')
-            expect(events[1].filename).to.equal('sub-dir/sub-sub-dir/two.txt')
-            expect(events[2].filename).to.equal('sub-dir/sub-sub-dir/one.txt')
-            this.stop()
-            done()
-          }
+      var dw = new DeepWatch('.', function(event, filename) {
+        storeData(event, filename)
+        if (events.length === 3) {
+          expect(events[0].filename).to.equal('sub-dir/sub-sub-dir/new.txt')
+          expect(events[1].filename).to.equal('sub-dir/sub-sub-dir/two.txt')
+          expect(events[2].filename).to.equal('sub-dir/sub-sub-dir/one.txt')
+          this.stop()
+          done()
         }
       })
       dw.start()
@@ -98,18 +98,14 @@ describe('DeepWatch', function() {
     })
 
     it('can detect changes to files in directories created after the watching started', function(done) {
-      var dw = new DeepWatch({
-        callback: function(event, filename) {
-          storeData(event, filename)
-          if (events.length === 3) {
-            expect(events[0].filename).to.equal('new-dir')
-            expect(events[1].filename).to.equal('new-dir/foo.txt')
-            expect(events[2].filename).to.equal('new-dir/foo.txt')
-            this.stop()
-            fs.removeSync('new-dir')
-            done()
-
-          }
+      var dw = new DeepWatch('.', function(event, filename) {
+        storeData(event, filename)
+        if (events.length === 3) {
+          expect(events[0].filename).to.equal('new-dir')
+          expect(events[1].filename).to.equal('new-dir/foo.txt')
+          expect(events[2].filename).to.equal('new-dir/foo.txt')
+          this.stop()
+          done()
         }
       })
       dw.start()
@@ -119,22 +115,19 @@ describe('DeepWatch', function() {
         fs.outputFileSync('new-dir/foo.txt', 'foo')
         setTimeout(function() {
           fs.removeSync('new-dir/foo.txt')
-        }, 100)
-      }, 100)
+        }, delay)
+      }, delay)
     })
 
     it('can detect the removal of directories created after the watching started', function(done) {
-      var dw = new DeepWatch({
-        callback: function(event, filename) {
-          storeData(event, filename)
-          if (events.length === 3) {
-            expect(events[0].filename).to.equal('new-dir')
-            expect(events[1].filename).to.equal('new-dir/new-sub-dir')
-            expect(events[2].filename).to.equal('new-dir/new-sub-dir')
-            this.stop()
-            fs.removeSync('new-dir')
-            done()
-          }
+      var dw = new DeepWatch('.', function(event, filename) {
+        storeData(event, filename)
+        if (events.length === 3) {
+          expect(events[0].filename).to.equal('new-dir')
+          expect(events[1].filename).to.equal('new-dir/new-sub-dir')
+          expect(events[2].filename).to.equal('new-dir/new-sub-dir')
+          this.stop()
+          done()
         }
       })
       dw.start()
@@ -144,8 +137,30 @@ describe('DeepWatch', function() {
         fs.mkdirpSync('new-dir/new-sub-dir')
         setTimeout(function() {
           fs.removeSync('new-dir/new-sub-dir')
-        }, 100)
-      }, 100)
+        }, delay)
+      }, delay)
+    })
+
+  })
+
+  describe('#stop', function(done) {
+
+    it('removes all bound watchers', function(done) {
+      var dw = new DeepWatch('.', storeData)
+      dw.start()
+      fs.appendFileSync('one.txt', 'additional text...')
+      fs.appendFileSync('sub-dir/one.txt', 'additional text...')
+      fs.appendFileSync('sub-dir/sub-sub-dir/one.txt', 'additional text...')
+      setTimeout(function() {
+        dw.stop()
+        fs.appendFileSync('one.txt', 'additional text...')
+        fs.appendFileSync('sub-dir/one.txt', 'additional text...')
+        fs.appendFileSync('sub-dir/sub-sub-dir/one.txt', 'additional text...')
+        setTimeout(function() {
+          expect(events.length).to.equal(3)
+          done()
+        }, delay)
+      }, delay)
     })
 
   })
