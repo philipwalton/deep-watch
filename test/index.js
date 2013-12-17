@@ -33,7 +33,6 @@ describe('DeepWatch', function() {
     setTimeout(done, 100)
   })
 
-
   after(function() {
     process.chdir(cwd)
     fs.removeSync('test/fixtures')
@@ -63,25 +62,39 @@ describe('DeepWatch', function() {
     it('can detect changes to files in sub-directories', function(done) {
       var dw = new DeepWatch({
         callback: function(event, filename) {
-          expect(filename).to.equal('sub-dir/one.txt')
-          this.stop()
-          done()
+          storeData(event, filename)
+          if (events.length === 3) {
+            expect(events[0].filename).to.equal('sub-dir/new.txt')
+            expect(events[1].filename).to.equal('sub-dir/two.txt')
+            expect(events[2].filename).to.equal('sub-dir/one.txt')
+            this.stop()
+            done()
+          }
         }
       })
       dw.start()
-      fs.writeFileSync('sub-dir/one.txt', 'foo')
+      fs.writeFileSync('sub-dir/new.txt', 'foo')
+      fs.removeSync('sub-dir/two.txt')
+      fs.appendFileSync('sub-dir/one.txt', 'additional text...')
     })
 
     it('can detect changes to files in sub-sub-directories', function(done) {
       var dw = new DeepWatch({
         callback: function(event, filename) {
-          expect(filename).to.equal('sub-dir/sub-sub-dir/one.txt')
-          this.stop()
-          done()
+          storeData(event, filename)
+          if (events.length === 3) {
+            expect(events[0].filename).to.equal('sub-dir/sub-sub-dir/new.txt')
+            expect(events[1].filename).to.equal('sub-dir/sub-sub-dir/two.txt')
+            expect(events[2].filename).to.equal('sub-dir/sub-sub-dir/one.txt')
+            this.stop()
+            done()
+          }
         }
       })
       dw.start()
-      fs.writeFileSync('sub-dir/sub-sub-dir/one.txt', 'foo')
+      fs.writeFileSync('sub-dir/sub-sub-dir/new.txt', 'foo')
+      fs.removeSync('sub-dir/sub-sub-dir/two.txt')
+      fs.appendFileSync('sub-dir/sub-sub-dir/one.txt', 'additional text...')
     })
 
     it('can detect changes to files in directories created after the watching started', function(done) {
