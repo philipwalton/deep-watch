@@ -1,6 +1,6 @@
 {
   "name": "deep-watch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Exactly like fs.watch, but with sub-directory support.",
   "scripts": {
     "test": "mocha --reporter spec"
