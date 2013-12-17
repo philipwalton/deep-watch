@@ -1,5 +1,5 @@
 {
-  "name": "watch-deep",
+  "name": "deep-watch",
   "version": "0.1.0",
   "description": "Exactly like fs.watch, but with sub-directory support.",
   "scripts": {
@@ -7,7 +7,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:philipwalton/watch-deep.git"
+    "url": "git@github.com:philipwalton/deep-watch.git"
   },
   "keywords": [
     "fs",
@@ -16,7 +16,7 @@
   "author": "Philip Walton",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/philipwalton/watch-deep/issues"
+    "url": "https://github.com/philipwalton/deep-watch/issues"
   },
   "devDependencies": {
     "colors": "*",
