@@ -52,7 +52,7 @@ function updateChangelog() {
 }
 
 function updateFiles() {
-  var files = ["../package.json", "../bower.json"]
+  var files = ["../package.json"]
   files.forEach(function(file) {
     var filepath = path.resolve(__dirname, file)
     var data = JSON.parse(fs.readFileSync(filepath))
